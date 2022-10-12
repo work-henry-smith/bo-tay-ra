@@ -1,5 +1,5 @@
 import './App.css';
-import {useEffect, useRef} from 'react';
+import {useEffect, useRef, useState} from 'react';
 // import {Howl} from 'howler';
 // import soundURL from './assets/hey_sondn.mp3';
 
@@ -11,6 +11,7 @@ import {useEffect, useRef} from 'react';
 const NOT_TOUCH_LABEL = 'not_touch';
 const TOUCHED_LABEL = 'touched';
 const TRAINING_TIMES = 50;
+const TOUCHED_CONFIDENCE = 0.8;
 
 const tf = require('@tensorflow/tfjs');
 const mobilenet = require('@tensorflow-models/mobilenet');
@@ -21,6 +22,8 @@ function App() {
   const video = useRef();
   const classifier = useRef();
   const mobilenetModule = useRef();
+
+  const [touched, setTouched] = useState(false);
 
   const init = async() => {
     await setUpCamera();
@@ -63,6 +66,25 @@ function App() {
       await sleep(100);
       resolve();
     })
+  };
+
+  const run = async () => {
+    const embedding = mobilenetModule.current.infer(
+      video.current,
+      true
+    );
+
+    const result = await classifier.current.predictClass(embedding);
+
+    if (result.label === TOUCHED_LABEL && result.confidences[result.label] > TOUCHED_CONFIDENCE) {
+      setTouched(true);
+    } else {
+      setTouched(false);
+    }
+
+    await sleep(200);
+
+    run();
   }
 
   const sleep = (ms=0) => {
@@ -81,7 +103,7 @@ function App() {
       <div className='control'>
         <button className='btn' onClick={() => train(NOT_TOUCH_LABEL)}>Train 1</button>
         <button className='btn' onClick={() => train(TOUCHED_LABEL)}>Train 2</button>
-        <button className='btn' onClick={() => {}}>Run</button>
+        <button className='btn' onClick={() => run()}>Run</button>
       </div>
     </div>
   );
