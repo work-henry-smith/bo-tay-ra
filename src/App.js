@@ -1,12 +1,13 @@
 import './App.css';
 import {useEffect, useRef, useState} from 'react';
-// import {Howl} from 'howler';
-// import soundURL from './assets/hey_sondn.mp3';
+import {Howl} from 'howler';
+import soundURL from './assets/hey_sondn.mp3';
+import { initNotifications, notify } from '@mycv/f8-notification';
 
-// var sound = new Howl({
-//   src: [soundURL]
-// });
-// sound.play();
+var sound = new Howl({
+  src: [soundURL]
+});
+
 
 const NOT_TOUCH_LABEL = 'not_touch';
 const TOUCHED_LABEL = 'touched';
@@ -21,6 +22,7 @@ function App() {
 
   const video = useRef();
   const classifier = useRef();
+  const canPlaySound = useRef(true);
   const mobilenetModule = useRef();
 
   const [touched, setTouched] = useState(false);
@@ -29,6 +31,7 @@ function App() {
     await setUpCamera();
     classifier.current = knnClassifier.create();
     mobilenetModule.current = await mobilenet.load();
+    initNotifications({ cooldown: 3000 });
   };
 
   const setUpCamera = () => {
@@ -77,6 +80,12 @@ function App() {
     const result = await classifier.current.predictClass(embedding);
 
     if (result.label === TOUCHED_LABEL && result.confidences[result.label] > TOUCHED_CONFIDENCE) {
+      if (canPlaySound.current) {
+        canPlaySound.current = false;
+        sound.play();
+      }
+      
+      notify('Bỏ tay ra!', { body: 'Mày vừa chạm tay vào mặt ấy...' });
       setTouched(true);
     } else {
       setTouched(false);
@@ -93,11 +102,16 @@ function App() {
 
   useEffect(() => {
     init();
+
+    sound.on('end', function() {
+      canPlaySound.current = true;
+    });
+
     return () => {}
   },[]);
   
   return (
-    <div className="main">
+    <div className={`main ${touched ? 'touched' : ''}`}>
       <video ref={video} className='video' autoPlay />
 
       <div className='control'>
