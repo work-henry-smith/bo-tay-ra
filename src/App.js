@@ -14,7 +14,6 @@ const TOUCHED_LABEL = 'touched';
 const TRAINING_TIMES = 50;
 const TOUCHED_CONFIDENCE = 0.8;
 
-const tf = require('@tensorflow/tfjs');
 const mobilenet = require('@tensorflow-models/mobilenet');
 const knnClassifier = require('@tensorflow-models/knn-classifier');
 
@@ -108,6 +107,7 @@ function App() {
     });
 
     return () => {}
+    // eslint-disable-next-line
   },[]);
   
   return (
